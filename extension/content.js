@@ -35,7 +35,7 @@ const createChatInterface = () => {
     sendButton.style.padding = "8px 12px";
     sendButton.style.border = "none";
     sendButton.style.borderRadius = "5px";
-    sendButton.style.backgroundColor = "#4CAF50";
+    sendButton.style.backgroundColor = "#8BB8E8";
     sendButton.style.color = "#fff";
     sendButton.style.cursor = "pointer";
 
@@ -54,7 +54,7 @@ const createChatInterface = () => {
         messageBubble.style.maxWidth = "80%";
         messageBubble.style.wordWrap = "break-word";
         messageBubble.style.alignSelf = sender === "user" ? "flex-end" : "flex-start";
-        messageBubble.style.backgroundColor = sender === "user" ? "#DCF8C6" : "#E9E9EB";
+        messageBubble.style.backgroundColor = sender === "user" ? "#E8F5FF" : "#E9E9EB";
         messageBubble.style.color = "#333";
 
         messageDisplay.appendChild(messageBubble);
