@@ -2,21 +2,63 @@ const express = require('express');
 const { OpenAI } = require('openai');
 const app = express();
 const cors = require('cors');
+const axios = require('axios');
+const { google } = require('googleapis');
+const { spawn } = require('child_process');
+
 
 
 const openai = new OpenAI({
-    apiKey: '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', // Replace with your actual OpenAI API key
+    apiKey: 'API_KEY', // TODO: Replace with the actual OpenAI API key
 });
 
 app.use(cors());
 app.use(express.json());
 
+// Function to fetch transcript using the Python script
+function fetchTranscript(videoId) {
+    return new Promise((resolve, reject) => {
+        const pythonProcess = spawn('python3', ['fetch_transcript.py', videoId]);
+
+        let transcript = '';
+        pythonProcess.stdout.on('data', (data) => {
+            transcript += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error("Error in Python script:", data.toString());
+            reject("Error fetching transcript.");
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                if (transcript.startsWith("Error:")) {
+                    reject(transcript.trim());
+                } else {
+                    resolve(transcript.trim());
+                }
+            } else {
+                reject("Python script exited with error.");
+            }
+        });
+    });
+}
+
 app.post('/ask', async (req, res) => {
-    const { transcript, question } = req.body;
-    const prompt = `Context: ${transcript}\nQuestion: ${question}\nPlease respond in one paragraph.`;
+    const { videoId, question } = req.body;
 
     try {
-        // Use createChatCompletion for gpt-3.5-turbo or gpt-4 models
+        const transcript = await fetchTranscript(videoId);
+        if (!transcript) {
+            return res.json({ answer: "Unable to retrieve transcript due to restrictions or format limitations." });
+        }
+        // Debug purpose:
+        // console.log("Transcript content:", transcript);
+
+        // Combine transcript with the user question as context
+        const prompt = `Context: ${transcript}\nQuestion: ${question}\nPlease respond concisely.`;
+
+        // Use createChatCompletion for gpt-3.5-turbo or gpt-4 models;Send to gpt
         const response = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo-0125', // Or 'gpt-4-turbo' or 'gpt-3.5-turbo' for more cost-effective options
             messages: [

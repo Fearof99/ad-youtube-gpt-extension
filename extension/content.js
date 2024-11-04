@@ -1,6 +1,4 @@
-// Function to create and inject the chat interface
 const createChatInterface = () => {
-    // Chat container styling
     const chatContainer = document.createElement("div");
     chatContainer.style.position = "fixed";
     chatContainer.style.bottom = "20px";
@@ -14,18 +12,15 @@ const createChatInterface = () => {
     chatContainer.style.fontFamily = "Arial, sans-serif";
     chatContainer.style.zIndex = "1000";
 
-    // Message display area
     const messageDisplay = document.createElement("div");
     messageDisplay.style.maxHeight = "300px";
     messageDisplay.style.overflowY = "auto";
     messageDisplay.style.padding = "5px";
     messageDisplay.style.marginBottom = "10px";
 
-    // Input and send button container
     const inputContainer = document.createElement("div");
     inputContainer.style.display = "flex";
 
-    // Input field styling
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "Ask a question...";
@@ -35,24 +30,21 @@ const createChatInterface = () => {
     input.style.padding = "8px";
     input.style.marginRight = "5px";
 
-    // Send button styling
     const sendButton = document.createElement("button");
     sendButton.textContent = "Send";
     sendButton.style.padding = "8px 12px";
     sendButton.style.border = "none";
     sendButton.style.borderRadius = "5px";
-    sendButton.style.backgroundColor = "#4CAF50";
+    sendButton.style.backgroundColor = "#8BB8E8";
     sendButton.style.color = "#fff";
     sendButton.style.cursor = "pointer";
 
-    // Append elements
     inputContainer.appendChild(input);
     inputContainer.appendChild(sendButton);
     chatContainer.appendChild(messageDisplay);
     chatContainer.appendChild(inputContainer);
     document.body.appendChild(chatContainer);
 
-    // Function to display messages as chat bubbles
     const addMessage = (text, sender = "user") => {
         const messageBubble = document.createElement("div");
         messageBubble.textContent = text;
@@ -60,54 +52,49 @@ const createChatInterface = () => {
         messageBubble.style.margin = "5px 0";
         messageBubble.style.borderRadius = "10px";
         messageBubble.style.maxWidth = "80%";
+        messageBubble.style.wordWrap = "break-word";
         messageBubble.style.alignSelf = sender === "user" ? "flex-end" : "flex-start";
-        messageBubble.style.backgroundColor = sender === "user" ? "#DCF8C6" : "#E9E9EB";
+        messageBubble.style.backgroundColor = sender === "user" ? "#E8F5FF" : "#E9E9EB";
         messageBubble.style.color = "#333";
 
         messageDisplay.appendChild(messageBubble);
-        messageDisplay.scrollTop = messageDisplay.scrollHeight; // Auto-scroll to the latest message
+        messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
         return messageBubble;
     };
 
-    // Event listener for sending the question
+    const getVideoId = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('v'); // Assumes `v` parameter is present in URL
+    };
+
     sendButton.addEventListener("click", async () => {
         const question = input.value.trim();
-        if (!question) return;
+        const videoId = getVideoId();
 
-        // Display user's question
+        if (!question || !videoId) return;
+
         addMessage(question, "user");
         input.value = "";
 
-        // Display loading message for GPT response
         const loadingMessage = addMessage("Loading...", "bot");
 
         try {
-            console.log("Sending request to backend...");
             const response = await fetch("http://localhost:3000/ask", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ transcript: "Sample transcript", question }),
+                body: JSON.stringify({ videoId, question }),
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Received response from backend:", data);
-
-                // Display GPT response
-                addMessage(data.answer || "No response received.", "bot");
-            } else {
-                console.error(`Network response was not ok: ${response.statusText}`);
-                addMessage(`Error: ${response.statusText}`, "bot");
-            }
+            const data = await response.json();
+            messageDisplay.removeChild(loadingMessage);
+            addMessage(data.answer || "No response received.", "bot");
         } catch (error) {
             console.error("Error in fetch request:", error);
-            addMessage("Error: Unable to fetch response.", "bot");
-        } finally {
-            // Remove loading message regardless of success or failure
             messageDisplay.removeChild(loadingMessage);
+            addMessage("Error: Unable to fetch response.", "bot");
         }
     });
 };
 
-// Inject the chat interface when the page loads
 window.addEventListener("load", createChatInterface);
